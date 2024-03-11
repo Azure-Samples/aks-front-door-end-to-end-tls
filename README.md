@@ -1367,10 +1367,7 @@ For every workload that you expose via [Azure Private Link Service (PLS)](https:
 
 If the deployment succeeds, and the private endpoint connection from the [Azure Front Door Premium](https://learn.microsoft.com/en-us/azure/frontdoor/front-door-overview) instance to the [Azure Private Link Service (PLS)](https://learn.microsoft.com/en-us/azure/private-link/private-link-service-overview) is approved, you should be able to access the AKS-hosted [httpbin](https://httpbin.org/) web application as follows:
 
-- Navigate to the overview page of your Front Door Premium in the Azure Portal and copy the URL from the Endpoint hostname, as shown in the following picture
-
-![Azure Front Door Premium in the Azure Portal](images/azure-portal.png)
-
+- Navigate to the overview page of your Front Door Premium in the Azure Portal and copy the URL from the Endpoint hostname.
 - Paste and open the URL in your favorite internet browser. You should see the user interface of the [httpbin](https://httpbin.org/) application:
 
 ![HTTPBIN application](images/httpbin.png)
