@@ -16,7 +16,9 @@ param letterCaseType string = 'UpperCamelCase'
 param location string = resourceGroup().location
 
 @description('Specifies the name of the AKS cluster.')
-param aksClusterName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Aks' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Aks' : '${toLower(prefix)}-aks'
+param aksClusterName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Aks'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Aks' : '${toLower(prefix)}-aks'
 
 @description('Specifies whether creating metric alerts or not.')
 param createMetricAlerts bool = true
@@ -45,7 +47,6 @@ param aksClusterNetworkPlugin string = 'azure'
   ''
   'overlay'
 ])
-
 param aksClusterNetworkPluginMode string = ''
 
 @description('Specifies the network policy used for building Kubernetes network. - calico or azure')
@@ -84,6 +85,13 @@ param aksClusterDnsServiceIP string = '172.16.0.10'
   'standard'
 ])
 param aksClusterLoadBalancerSku string = 'standard'
+
+@description('Specifies the type of the managed inbound Load Balancer BackendPool.')
+@allowed([
+  'nodeIP'
+  'nodeIPConfiguration'
+])
+param loadBalancerBackendPoolType string = 'nodeIPConfiguration'
 
 @description('Specifies whether Network Observability is enabled or not. When enabled, network monitoring generates metrics in Prometheus format.')
 param aksClusterMonitoringEnabled bool = false
@@ -410,7 +418,9 @@ param autoScalerProfileMaxGracefulTerminationSec string = '600'
 param enableVnetIntegration bool = true
 
 @description('Specifies the name of the virtual network.')
-param virtualNetworkName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Vnet' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Vnet' : '${toLower(prefix)}-vnet'
+param virtualNetworkName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Vnet'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Vnet' : '${toLower(prefix)}-vnet'
 
 @description('Specifies the address prefixes of the virtual network.')
 param virtualNetworkAddressPrefixes string = '10.0.0.0/8'
@@ -458,19 +468,25 @@ param workloadIdentityEnabled bool = true
 param oidcIssuerProfileEnabled bool = true
 
 @description('Specifies the name of the subnet hosting the pods running in the AKS cluster.')
-param podSubnetName string = letterCaseType == 'UpperCamelCase' ? 'PodSubnet' : letterCaseType == 'CamelCase' ? 'podSubnet' : 'pod-subnet'
+param podSubnetName string = letterCaseType == 'UpperCamelCase'
+  ? 'PodSubnet'
+  : letterCaseType == 'CamelCase' ? 'podSubnet' : 'pod-subnet'
 
 @description('Specifies the address prefix of the subnet hosting the pods running in the AKS cluster.')
 param podSubnetAddressPrefix string = '10.2.0.0/16'
 
 @description('Specifies the name of the subnet delegated to the API server when configuring the AKS cluster to use API server VNET integration.')
-param apiServerSubnetName string = letterCaseType == 'UpperCamelCase' ? 'ApiServerSubnet' : letterCaseType == 'CamelCase' ? 'apiServerSubnet' : 'api-server-subnet'
+param apiServerSubnetName string = letterCaseType == 'UpperCamelCase'
+  ? 'ApiServerSubnet'
+  : letterCaseType == 'CamelCase' ? 'apiServerSubnet' : 'api-server-subnet'
 
 @description('Specifies the address prefix of the subnet delegated to the API server when configuring the AKS cluster to use API server VNET integration.')
 param apiServerSubnetAddressPrefix string = '10.3.0.0/28'
 
 @description('Specifies the name of the subnet which contains the virtual machine.')
-param vmSubnetName string = letterCaseType == 'UpperCamelCase' ? 'VmSubnet' : letterCaseType == 'CamelCase' ? 'vmSubnet' : 'vm-subnet'
+param vmSubnetName string = letterCaseType == 'UpperCamelCase'
+  ? 'VmSubnet'
+  : letterCaseType == 'CamelCase' ? 'vmSubnet' : 'vm-subnet'
 
 @description('Specifies the address prefix of the subnet which contains the virtual machine.')
 param vmSubnetAddressPrefix string = '10.3.1.0/24'
@@ -479,7 +495,9 @@ param vmSubnetAddressPrefix string = '10.3.1.0/24'
 param bastionSubnetAddressPrefix string = '10.3.2.0/24'
 
 @description('Specifies the name of the Log Analytics Workspace.')
-param logAnalyticsWorkspaceName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Workspace' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Workspace' : '${toLower(prefix)}-workspace'
+param logAnalyticsWorkspaceName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Workspace'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Workspace' : '${toLower(prefix)}-workspace'
 
 @description('Specifies the service tier of the workspace: Free, Standalone, PerNode, Per-GB.')
 @allowed([
@@ -552,15 +570,21 @@ param dataDiskCaching string = 'ReadWrite'
 param blobStorageAccountName string = '${toLower(prefix)}${uniqueString(resourceGroup().id)}'
 
 @description('Specifies the name of the private link to the boot diagnostics storage account.')
-param blobStorageAccountPrivateEndpointName string = letterCaseType == 'UpperCamelCase' ? 'BlobStorageAccountPrivateEndpoint' : letterCaseType == 'CamelCase' ? 'blobStorageAccountPrivateEndpoint' : 'blob-storage-account-private-endpoint'
+param blobStorageAccountPrivateEndpointName string = letterCaseType == 'UpperCamelCase'
+  ? 'BlobStorageAccountPrivateEndpoint'
+  : letterCaseType == 'CamelCase' ? 'blobStorageAccountPrivateEndpoint' : 'blob-storage-account-private-endpoint'
 
 @description('Specifies the name of the private link to the Azure Container Registry.')
-param acrPrivateEndpointName string = letterCaseType == 'UpperCamelCase' ? 'AcrPrivateEndpoint' : letterCaseType == 'CamelCase' ? 'acrPrivateEndpoint' : 'acr-private-endpoint'
+param acrPrivateEndpointName string = letterCaseType == 'UpperCamelCase'
+  ? 'AcrPrivateEndpoint'
+  : letterCaseType == 'CamelCase' ? 'acrPrivateEndpoint' : 'acr-private-endpoint'
 
 @description('Name of your Azure Container Registry')
 @minLength(5)
 @maxLength(50)
-param acrName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Acr' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Acr' : '${toLower(prefix)}-acr'
+param acrName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Registry'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Registry' : '${toLower(prefix)}-Registry'
 
 @description('Enable admin user that have push / pull permission to the registry.')
 param acrAdminUserEnabled bool = false
@@ -577,10 +601,14 @@ param acrSku string = 'Premium'
 param bastionHostEnabled bool = true
 
 @description('Specifies the name of the Azure Bastion resource.')
-param bastionHostName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Bastion' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Bastion' : '${toLower(prefix)}-bastion'
+param bastionHostName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Bastion'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Bastion' : '${toLower(prefix)}-bastion'
 
 @description('Specifies the name of the Azure NAT Gateway.')
-param natGatewayName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}NatGateway' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}NatGateway' : '${toLower(prefix)}-nat-gateway'
+param natGatewayName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}NatGateway'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}NatGateway' : '${toLower(prefix)}-nat-gateway'
 
 @description('Specifies a list of availability zones denoting the zone in which Nat Gateway should be deployed.')
 param natGatewayZones array = []
@@ -592,7 +620,9 @@ param natGatewayPublicIps int = 1
 param natGatewayIdleTimeoutMins int = 30
 
 @description('Specifies the name of the private link to the Key Vault.')
-param keyVaultPrivateEndpointName string = letterCaseType == 'UpperCamelCase' ? 'KeyVaultPrivateEndpoint' : letterCaseType == 'CamelCase' ? 'keyVaultPrivateEndpoint' : 'key-vault-private-endpoint'
+param keyVaultPrivateEndpointName string = letterCaseType == 'UpperCamelCase'
+  ? 'KeyVaultPrivateEndpoint'
+  : letterCaseType == 'CamelCase' ? 'keyVaultPrivateEndpoint' : 'key-vault-private-endpoint'
 
 @description('Specifies the name of an existing Key Vault resource holding the TLS certificate.')
 param keyVaultName string
@@ -604,7 +634,9 @@ param keyVaultResourceGroupName string
 param keyVaultCertificateName string
 
 @description('Specifies the name of the Azure Front Door.')
-param frontDoorName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}FrontDoor' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}FrontDoor' : '${toLower(prefix)}-front-door'
+param frontDoorName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}FrontDoor'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}FrontDoor' : '${toLower(prefix)}-front-door'
 
 @description('The name of the SKU to use when creating the Front Door profile.')
 @allowed([
@@ -617,10 +649,14 @@ param frontDoorSkuName string = 'Premium_AzureFrontDoor'
 param originResponseTimeoutSeconds int = 30
 
 @description('Specifies the name of the Azure Front Door Origin Group for the web application.')
-param originGroupName string = letterCaseType == 'UpperCamelCase' ? '${frontDoorName}OriginGroup' : letterCaseType == 'CamelCase' ? '${frontDoorName}OriginGroup' : '${toLower(prefix)}-origin-group'
+param originGroupName string = letterCaseType == 'UpperCamelCase'
+  ? '${frontDoorName}OriginGroup'
+  : letterCaseType == 'CamelCase' ? '${frontDoorName}OriginGroup' : '${toLower(prefix)}-origin-group'
 
 @description('Specifies the name of the Azure Front Door Origin for the web application.')
-param originName string = letterCaseType == 'UpperCamelCase' ? '${frontDoorName}Origin' : letterCaseType == 'CamelCase' ? '${frontDoorName}Origin' : '${toLower(prefix)}-origin'
+param originName string = letterCaseType == 'UpperCamelCase'
+  ? '${frontDoorName}Origin'
+  : letterCaseType == 'CamelCase' ? '${frontDoorName}Origin' : '${toLower(prefix)}-origin'
 
 @description('Specifies the value of the HTTP port. Must be between 1 and 65535.')
 param httpPort int = 80
@@ -693,7 +729,9 @@ param sessionAffinityState string = 'Disabled'
 param autoGeneratedDomainNameLabelScope string = 'TenantReuse'
 
 @description('Specifies the name of the Azure Front Door Route for the web application.')
-param routeName string = letterCaseType == 'UpperCamelCase' ? '${frontDoorName}Route' : letterCaseType == 'CamelCase' ? '${frontDoorName}Route' : '${toLower(prefix)}-route'
+param routeName string = letterCaseType == 'UpperCamelCase'
+  ? '${frontDoorName}Route'
+  : letterCaseType == 'CamelCase' ? '${frontDoorName}Route' : '${toLower(prefix)}-route'
 
 @description('Specifies a directory path on the origin that Azure Front Door can use to retrieve content from, e.g. contoso.cloudapp.net/originpath.')
 param originPath string = '/'
@@ -702,13 +740,13 @@ param originPath string = '/'
 param ruleSets array = []
 
 @description('Specifies the list of supported protocols for this route')
-param supportedProtocols array  = [
+param supportedProtocols array = [
   'Http'
   'Https'
 ]
 
 @description('Specifies the route patterns of the rule.')
-param routePatternsToMatch array = [ '/*' ]
+param routePatternsToMatch array = ['/*']
 
 @description('Specifies the protocol this rule will use when forwarding traffic to backends.')
 @allowed([
@@ -733,7 +771,9 @@ param linkToDefaultDomain string = 'Enabled'
 param httpsRedirect string = 'Enabled'
 
 @description('Specifies the name of the Azure Front Door Endpoint for the web application.')
-param endpointName string = letterCaseType == 'UpperCamelCase' ? '${frontDoorName}Endpoint' : letterCaseType == 'CamelCase' ? '${frontDoorName}Endpoint' : '${toLower(prefix)}-endpoint'
+param endpointName string = letterCaseType == 'UpperCamelCase'
+  ? '${frontDoorName}Endpoint'
+  : letterCaseType == 'CamelCase' ? '${frontDoorName}Endpoint' : '${toLower(prefix)}-endpoint'
 
 @description('Specifies whether to enable use of this rule. Permitted values are Enabled or Disabled')
 @allowed([
@@ -743,7 +783,9 @@ param endpointName string = letterCaseType == 'UpperCamelCase' ? '${frontDoorNam
 param endpointEnabledState string = 'Enabled'
 
 @description('Specifies the name of the Azure Front Door WAF policy.')
-param wafPolicyName string = letterCaseType == 'UpperCamelCase' ? '${frontDoorName}WafPolicy' : letterCaseType == 'CamelCase' ? '${frontDoorName}WafPolicy' : '${toLower(prefix)}-waf-policy'
+param wafPolicyName string = letterCaseType == 'UpperCamelCase'
+  ? '${frontDoorName}WafPolicy'
+  : letterCaseType == 'CamelCase' ? '${frontDoorName}WafPolicy' : '${toLower(prefix)}-waf-policy'
 
 @description('Specifies the WAF policy is in detection mode or prevention mode.')
 @allowed([
@@ -808,6 +850,26 @@ param wafCustomRules array = [
     ]
     action: 'Block'
   }
+  {
+    name: 'RateLimitRule'
+    enabledState: 'Enabled'
+    priority: 1
+    ruleType: 'RateLimitRule'
+    rateLimitDurationInMinutes: 1
+    rateLimitThreshold: 1000
+    matchConditions: [
+      {
+        matchVariable: 'RemoteAddr'
+        operator: 'IPMatch'
+        negateCondition: true
+        matchValue: [
+          '0.0.0.0'
+        ]
+        transforms: []
+      }
+    ]
+    action: 'Block'
+  }
 ]
 
 @description('Specifies if the WAF policy managed rules will inspect the request body content.')
@@ -818,13 +880,17 @@ param wafCustomRules array = [
 param wafPolicyRequestBodyCheck string = 'Enabled'
 
 @description('Specifies name of the security policy.')
-param securityPolicyName string = letterCaseType == 'UpperCamelCase' ? '${frontDoorName}SecurityPolicy' : letterCaseType == 'CamelCase' ? '${frontDoorName}SecurityPolicy' : '${toLower(prefix)}-security-policy'
+param securityPolicyName string = letterCaseType == 'UpperCamelCase'
+  ? '${frontDoorName}SecurityPolicy'
+  : letterCaseType == 'CamelCase' ? '${frontDoorName}SecurityPolicy' : '${toLower(prefix)}-security-policy'
 
 @description('Specifies the list of patterns to match by the security policy.')
-param securityPolicyPatternsToMatch array = [ '/*' ]
+param securityPolicyPatternsToMatch array = ['/*']
 
 @description('Specifies the name of the Azure Private Link Service.')
-param privateLinkServiceName string = empty(prefix) ? '${uniqueString(resourceGroup().id)}-private-link-service' : '${prefix}PrivateLinkService'
+param privateLinkServiceName string = empty(prefix)
+  ? '${uniqueString(resourceGroup().id)}-private-link-service'
+  : '${prefix}PrivateLinkService'
 
 @description('Specifies the resource tags.')
 param tags object = {
@@ -838,7 +904,9 @@ param clusterTags object = {
 }
 
 @description('Specifies the name of the Action Group.')
-param actionGroupName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}ActionGroup' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}ActionGroup' : '${toLower(prefix)}-action-group'
+param actionGroupName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}ActionGroup'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}ActionGroup' : '${toLower(prefix)}-action-group'
 
 @description('Specifies the short name of the action group. This will be used in SMS messages..')
 param actionGroupShortName string = 'AksAlerts'
@@ -865,7 +933,9 @@ param metricAnnotationsAllowList string = ''
 param metricLabelsAllowlist string = ''
 
 @description('Specifies the name of the Azure Monitor managed service for Prometheus resource.')
-param prometheusName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Prometheus' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Prometheus' : '${toLower(prefix)}-prometheus'
+param prometheusName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Prometheus'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Prometheus' : '${toLower(prefix)}-prometheus'
 
 @description('Specifies whether or not public endpoint access is allowed for the Azure Monitor managed service for Prometheus resource.')
 @allowed([
@@ -875,7 +945,9 @@ param prometheusName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(fi
 param prometheusPublicNetworkAccess string = 'Enabled'
 
 @description('Specifies the name of the Azure Managed Grafana resource.')
-param grafanaName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Grafana' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Grafana' : '${toLower(prefix)}-grafana'
+param grafanaName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}Grafana'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}Grafana' : '${toLower(prefix)}-grafana'
 
 @description('Specifies the sku of the Azure Managed Grafana resource.')
 param grafanaSkuName string = 'Standard'
@@ -905,7 +977,7 @@ param grafanaDeterministicOutboundIP string = 'Disabled'
   'Disabled'
   'Enabled'
 ])
-param grafanaPublicNetworkAccess	string = 'Enabled' 
+param grafanaPublicNetworkAccess string = 'Enabled'
 
 @description('The zone redundancy setting of the Azure Managed Grafana resource.')
 @allowed([
@@ -931,7 +1003,9 @@ param tenantId string = subscription().tenantId
 param email string = 'admin@contoso.com'
 
 @description('Specifies the name of the deployment script uri.')
-param deploymentScripName string = letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}BashScript' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}BashScript' : '${toLower(prefix)}-bash-script'
+param deploymentScripName string = letterCaseType == 'UpperCamelCase'
+  ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}BashScript'
+  : letterCaseType == 'CamelCase' ? '${toLower(prefix)}BashScript' : '${toLower(prefix)}-bash-script'
 
 @description('Specifies the uri of the deployment script.')
 param deploymentScriptUri string
@@ -1042,7 +1116,6 @@ module network 'network.bicep' = {
   }
 }
 
-
 module jumpboxVirtualMachine 'virtualMachine.bicep' = if (vmEnabled) {
   name: 'jumpboxVirtualMachine'
   params: {
@@ -1061,7 +1134,11 @@ module jumpboxVirtualMachine 'virtualMachine.bicep' = if (vmEnabled) {
     osDiskSize: osDiskSize
     dataDiskSize: dataDiskSize
     dataDiskCaching: dataDiskCaching
-    managedIdentityName: letterCaseType == 'UpperCamelCase' ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}AzureMonitorAgentManagedIdentity' : letterCaseType == 'CamelCase' ? '${toLower(prefix)}AzureMonitorAgentManagedIdentity' : '${toLower(prefix)}-azure-monitor-agent-managed-identity'
+    managedIdentityName: letterCaseType == 'UpperCamelCase'
+      ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}AzureMonitorAgentManagedIdentity'
+      : letterCaseType == 'CamelCase'
+          ? '${toLower(prefix)}AzureMonitorAgentManagedIdentity'
+          : '${toLower(prefix)}-azure-monitor-agent-managed-identity'
     location: location
     tags: tags
   }
@@ -1072,10 +1149,6 @@ module aksManageIdentity 'aksManagedIdentity.bicep' = {
   params: {
     managedIdentityName: '${aksClusterName}Identity'
     virtualNetworkName: network.outputs.virtualNetworkName
-    systemAgentPoolSubnetName: systemAgentPoolSubnetName
-    userAgentPoolSubnetName: userAgentPoolSubnetName
-    podSubnetName: podSubnetName
-    apiServerSubnetName: apiServerSubnetName
     location: location
     tags: tags
   }
@@ -1114,6 +1187,7 @@ module aksCluster 'aksCluster.bicep' = {
     serviceCidr: aksClusterServiceCidr
     dnsServiceIP: aksClusterDnsServiceIP
     loadBalancerSku: aksClusterLoadBalancerSku
+    loadBalancerBackendPoolType: loadBalancerBackendPoolType
     monitoringEnabled: aksClusterMonitoringEnabled
     ipFamilies: aksClusterIpFamilies
     outboundType: aksClusterOutboundType
@@ -1257,7 +1331,6 @@ module grafana 'managedGrafana.bicep' = {
   }
 }
 
-
 module privateLinkService 'privateLinkService.bicep' = {
   name: 'modules-private-link-service'
   params: {
@@ -1281,7 +1354,7 @@ module frontDoor 'frontDoor.bicep' = {
     originResponseTimeoutSeconds: originResponseTimeoutSeconds
     originGroupName: originGroupName
     originName: originName
-    originEnabledState : originEnabledState
+    originEnabledState: originEnabledState
     originPath: originPath
     hostName: hostName
     httpPort: httpPort
