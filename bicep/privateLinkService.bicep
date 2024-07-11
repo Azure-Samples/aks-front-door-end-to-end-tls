@@ -49,7 +49,7 @@ resource privateLinkService 'Microsoft.Network/privateLinkServices@2023-04-01' =
     }
     visibility: {
       subscriptions: [
-        subscription().subscriptionId
+        '*'
       ]
     }
     fqdns: []

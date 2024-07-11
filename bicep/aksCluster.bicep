@@ -77,6 +77,13 @@ param dnsServiceIP string = '172.16.0.10'
 ])
 param loadBalancerSku string = 'standard'
 
+@description('Specifies the type of the managed inbound Load Balancer BackendPool.')
+@allowed([
+  'nodeIP'
+  'nodeIPConfiguration'
+])
+param loadBalancerBackendPoolType string = 'nodeIPConfiguration'
+
 @description('Specifies whether Network Observability is enabled or not. When enabled, network monitoring generates metrics in Prometheus format.')
 param monitoringEnabled bool = false
 
@@ -550,7 +557,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2018-05-01' existing = if (webAppRo
   scope: resourceGroup(dnsZoneResourceGroupName)
 }
 
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-01-02-preview' = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-03-02-preview' = {
   name: name
   location: location
   tags: tags
@@ -689,7 +696,9 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-01-02-previ
       monitoring: monitoringEnabled ? {
         enabled: true
       } : null
-      loadBalancerProfile: null
+      loadBalancerProfile: {
+        backendPoolType: loadBalancerBackendPoolType
+      }
       ipFamilies: ipFamilies
     }
     workloadAutoScalerProfile: {
