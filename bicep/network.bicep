@@ -268,7 +268,7 @@ var subnets = union(
 // Resources
 
 // Network Security Groups
-resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = if (bastionHostEnabled) {
+resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2024-05-01' = if (bastionHostEnabled) {
   name: bastionSubnetNsgName
   location: location
   tags: tags
@@ -420,7 +420,7 @@ resource bastionSubnetNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' =
   }
 }
 
-resource vmSubnetNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
+resource vmSubnetNsg 'Microsoft.Network/networkSecurityGroups@2024-05-01' = {
   name: vmSubnetNsgName
   location: location
   tags: tags
@@ -444,7 +444,7 @@ resource vmSubnetNsg 'Microsoft.Network/networkSecurityGroups@2023-04-01' = {
 }
 
 // Virtual Network
-resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
+resource vnet 'Microsoft.Network/virtualNetworks@2024-05-01' = {
   name: virtualNetworkName
   location: location
   tags: tags
@@ -459,7 +459,7 @@ resource vnet 'Microsoft.Network/virtualNetworks@2023-04-01' = {
 }
 
 // NAT Gateway
-resource natGatewayPublicIp 'Microsoft.Network/publicIPAddresses@2023-04-01' =  [for i in range(0, natGatewayPublicIps): if(natGatewayEnabled) {
+resource natGatewayPublicIp 'Microsoft.Network/publicIPAddresses@2024-05-01' =  [for i in range(0, natGatewayPublicIps): if(natGatewayEnabled) {
   name: natGatewayPublicIps == 1 ? '${natGatewayName}PublicIp' : '${natGatewayName}PublicIp${i + 1}'
   location: location
   sku: {
@@ -471,7 +471,7 @@ resource natGatewayPublicIp 'Microsoft.Network/publicIPAddresses@2023-04-01' =  
   }
 }]
 
-resource natGateway 'Microsoft.Network/natGateways@2023-04-01' = if(natGatewayEnabled) {
+resource natGateway 'Microsoft.Network/natGateways@2024-05-01' = if(natGatewayEnabled) {
   name: natGatewayName
   location: location
   sku: {
@@ -490,7 +490,7 @@ resource natGateway 'Microsoft.Network/natGateways@2023-04-01' = if(natGatewayEn
 }
 
 // Azure Bastion Host
-resource bastionPublicIpAddress 'Microsoft.Network/publicIPAddresses@2023-04-01' = if (bastionHostEnabled) {
+resource bastionPublicIpAddress 'Microsoft.Network/publicIPAddresses@2024-05-01' = if (bastionHostEnabled) {
   name: bastionPublicIpAddressName
   location: location
   tags: tags
@@ -502,7 +502,7 @@ resource bastionPublicIpAddress 'Microsoft.Network/publicIPAddresses@2023-04-01'
   }
 }
 
-resource bastionHost 'Microsoft.Network/bastionHosts@2023-04-01' = if (bastionHostEnabled) {
+resource bastionHost 'Microsoft.Network/bastionHosts@2024-05-01' = if (bastionHostEnabled) {
   name: bastionHostName
   location: location
   tags: tags
@@ -529,26 +529,26 @@ resource bastionHost 'Microsoft.Network/bastionHosts@2023-04-01' = if (bastionHo
 }
 
 // Private DNS Zones
-resource acrPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource acrPrivateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   name: 'privatelink.${toLower(environment().name) == 'azureusgovernment' ? 'azurecr.us' : 'azurecr.io'}'
   location: 'global'
   tags: tags
 }
 
-resource blobPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource blobPrivateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   name: 'privatelink.blob.${environment().suffixes.storage}'
   location: 'global'
   tags: tags
 }
 
-resource keyVaultPrivateDnsZone 'Microsoft.Network/privateDnsZones@2020-06-01' = {
+resource keyVaultPrivateDnsZone 'Microsoft.Network/privateDnsZones@2024-06-01' = {
   name: 'privatelink.${toLower(environment().name) == 'azureusgovernment' ? 'vaultcore.usgovcloudapi.net' : 'vaultcore.azure.net'}'
   location: 'global'
   tags: tags
 }
 
 // Virtual Network Links
-resource acrPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource acrPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: acrPrivateDnsZone
   name: 'link_to_${toLower(virtualNetworkName)}'
   location: 'global'
@@ -560,7 +560,7 @@ resource acrPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones/
   }
 }
 
-resource blobPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource blobPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: blobPrivateDnsZone
   name: 'link_to_${toLower(virtualNetworkName)}'
   location: 'global'
@@ -572,7 +572,7 @@ resource blobPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones
   }
 }
 
-resource keyVaultPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2020-06-01' = {
+resource keyVaultPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZones/virtualNetworkLinks@2024-06-01' = {
   parent: keyVaultPrivateDnsZone
   name: 'link_to_${toLower(virtualNetworkName)}'
   location: 'global'
@@ -585,7 +585,7 @@ resource keyVaultPrivateDnsZoneVirtualNetworkLink 'Microsoft.Network/privateDnsZ
 }
 
 // Private Endpoints
-resource blobStorageAccountPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-04-01' = {
+resource blobStorageAccountPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = {
   name: storageAccountPrivateEndpointName
   location: location
   tags: tags
@@ -607,7 +607,7 @@ resource blobStorageAccountPrivateEndpoint 'Microsoft.Network/privateEndpoints@2
   }
 }
 
-resource blobStorageAccountPrivateDnsZoneGroupName 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
+resource blobStorageAccountPrivateDnsZoneGroupName 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01' = {
   parent: blobStorageAccountPrivateEndpoint
   name: 'PrivateDnsZoneGroupName'
   properties: {
@@ -622,7 +622,7 @@ resource blobStorageAccountPrivateDnsZoneGroupName 'Microsoft.Network/privateEnd
   }
 }
 
-resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-04-01' = {
+resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = {
   name: keyVaultPrivateEndpointName
   location: location
   tags: tags
@@ -644,7 +644,7 @@ resource keyVaultPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-04-01'
   }
 }
 
-resource keyVaultPrivateDnsZoneGroupName 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = {
+resource keyVaultPrivateDnsZoneGroupName 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01' = {
   parent: keyVaultPrivateEndpoint
   name: 'PrivateDnsZoneGroupName'
   properties: {
@@ -659,7 +659,7 @@ resource keyVaultPrivateDnsZoneGroupName 'Microsoft.Network/privateEndpoints/pri
   }
 }
 
-resource acrPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-04-01' = if (createAcrPrivateEndpoint) {
+resource acrPrivateEndpoint 'Microsoft.Network/privateEndpoints@2024-05-01' = if (createAcrPrivateEndpoint) {
   name: acrPrivateEndpointName
   location: location
   tags: tags
@@ -681,7 +681,7 @@ resource acrPrivateEndpoint 'Microsoft.Network/privateEndpoints@2023-04-01' = if
   }
 }
 
-resource acrPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2023-04-01' = if (createAcrPrivateEndpoint) {
+resource acrPrivateDnsZoneGroup 'Microsoft.Network/privateEndpoints/privateDnsZoneGroups@2024-05-01' = if (createAcrPrivateEndpoint) {
   parent: acrPrivateEndpoint
   name: 'acrPrivateDnsZoneGroup'
   properties: {

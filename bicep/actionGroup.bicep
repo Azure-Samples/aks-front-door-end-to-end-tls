@@ -24,7 +24,7 @@ param phoneNumber string = ''
 param tags object
 
 // Resources
-resource actionGroup 'Microsoft.Insights/actionGroups@2023-01-01' = {
+resource actionGroup 'Microsoft.Insights/actionGroups@2024-10-01-preview' = {
   name: name
   location: 'Global'
   tags: tags

@@ -1,25 +1,25 @@
 using './main.bicep'
 
 param aksClusterNetworkMode = 'transparent'
-param aksClusterNetworkDataplane = 'azure'
+param aksClusterNetworkDataplane = 'cilium'
 param aksClusterNetworkPlugin = 'azure'
 param aksClusterNetworkPluginMode = 'overlay'
-param aksClusterNetworkPolicy = 'azure'
+param aksClusterNetworkPolicy = 'cilium'
 param aksClusterWebAppRoutingEnabled = true
-param aksClusterMonitoringEnabled = true
+param aksClusterAcnsEnabled = true
 param aksClusterSkuTier = 'Standard'
 param aksClusterPodCidr = '192.168.0.0/16'
 param aksClusterServiceCidr = '172.16.0.0/16'
 param aksClusterDnsServiceIP = '172.16.0.10'
 param aksClusterOutboundType = 'userAssignedNATGateway'
-param aksClusterKubernetesVersion = '1.24.0'
+param aksClusterKubernetesVersion = '1.31.5'
 param aksClusterAdminUsername = 'azadmin'
 param aksClusterSshPublicKey = '<your-ssh-public-key>'
 param loadBalancerBackendPoolType = 'nodeIPConfiguration'
 param aadProfileManaged = true
 param aadProfileEnableAzureRBAC = true
 param aadProfileAdminGroupObjectIDs = [
-  '<your-aad-group-object-id>'
+  '4e4d0501-e693-4f3e-965b-5bec6c410c03'
 ]
 param systemAgentPoolName = 'system'
 param systemAgentPoolVmSize = 'Standard_F8s_v2'
@@ -72,7 +72,7 @@ param kedaEnabled = true
 param daprEnabled = true
 param fluxGitOpsEnabled = false
 param verticalPodAutoscalerEnabled = true
-param deploymentScriptUri = 'https://paolosalvatori.blob.core.windows.net/scripts/install-front-door-end-to-end-tls.sh'
+param deploymentScriptUri = 'https://raw.githubusercontent.com/Azure-Samples/aks-front-door-end-to-end-tls/refs/heads/main/bicep/install-front-door-end-to-end-tls.sh'
 param blobCSIDriverEnabled = true
 param diskCSIDriverEnabled = true
 param fileCSIDriverEnabled = true
@@ -83,14 +83,19 @@ param imageCleanerIntervalHours = 24
 param nodeRestrictionEnabled = true
 param workloadIdentityEnabled = true
 param oidcIssuerProfileEnabled = true
-param subdomain = 'store'
+param subdomain = 'httpbin'
 param dnsZoneName = '<your-public-dns-zone-name>'
 param dnsZoneResourceGroupName = '<your-public-dns-zone-resource-group-name>'
-param namespace = 'httpbin-tls'
+param namespace = 'httpbin'
 param actionGroupEmailAddress = '<your-email>'
 param keyVaultName = '<your-key-vault-name>'
 param keyVaultResourceGroupName = '<your-key-vault-resource-group-name>'
-param keyVaultCertificateName = 'store-test-com'
+param keyVaultCertificateName = 'httpbin'
+param keyVaultCertificateVersion = ''
 param secretProviderClassName = 'azure-tls'
 param secretName = 'ingress-tls-csi'
+param nginxIngressControllerType = 'Managed'
+param installPrometheusAndGrafana = true
+param installCertManager = true
+param installNginxIngressController = true
 

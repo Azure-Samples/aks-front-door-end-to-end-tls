@@ -1,0 +1,125 @@
+apiVersion: secrets-store.csi.x-k8s.io/v1
+kind: SecretProviderClass
+metadata:
+  name: azure-secrets
+spec:
+  provider: azure
+  secretObjects:
+    - secretName: httpbin-tls-secret
+      type: kubernetes.io/tls
+      data: 
+        - objectName: httpbin
+          key: tls.key
+        - objectName: httpbin
+          key: tls.crt
+  parameters:
+    usePodIdentity: "false"
+    useVMManagedIdentity: "true"
+    userAssignedIdentityID: $csiDriverClientId
+    keyvaultName: BaboKeyVault
+    objects: |
+      array:
+        - |
+          objectName: httpbin
+          objectType: secret
+    tenantId: 72f988bf-86f1-41af-91ab-2d7cd011db47
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: httpbin
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: httpbin
+  template:
+    metadata:
+      labels:
+        app: httpbin
+    spec:
+      topologySpreadConstraints:
+      - maxSkew: 1
+        topologyKey: topology.kubernetes.io/zone
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: httpbin
+      - maxSkew: 1
+        topologyKey: kubernetes.io/hostname
+        whenUnsatisfiable: DoNotSchedule
+        labelSelector:
+          matchLabels:
+            app: httpbin
+      nodeSelector:
+        "kubernetes.io/os": linux
+      containers:
+      - name: httpbin
+        image: docker.io/kennethreitz/httpbin
+        imagePullPolicy: IfNotPresent
+        securityContext:
+          allowPrivilegeEscalation: false
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "125m"
+          limits:
+            memory: "128Mi"
+            cpu: "250m"
+        ports:
+        - containerPort: 80
+        env:
+        - name: PORT
+          value: "80"
+        volumeMounts:
+        - name: secrets-store-inline
+          mountPath: "/mnt/secrets-store"
+          readOnly: true
+      volumes:
+        - name: secrets-store-inline
+          csi:
+            driver: secrets-store.csi.k8s.io
+            readOnly: true
+            volumeAttributes:
+              secretProviderClass: "azure-secrets"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: httpbin
+spec:
+  ports:
+    - port: 80
+      targetPort: 80
+      protocol: TCP
+  type: ClusterIP
+  selector:
+    app: httpbin
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: httpbin
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "360"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "360"
+    nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: "360"
+    external-dns.alpha.kubernetes.io/ingress-hostname-source: "annotation-only"
+spec:
+  ingressClassName: nginx
+  tls:
+  - hosts:
+    - httpbin.babosbird.com
+    secretName: httpbin-tls-secret
+  rules:
+  - host: httpbin.babosbird.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: httpbin
+            port:
+              number: 80
