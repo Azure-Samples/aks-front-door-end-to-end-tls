@@ -30,34 +30,69 @@ helm repo add jetstack https://charts.jetstack.io
 helm repo update
 
 # Install Prometheus
-helm install prometheus prometheus-community/kube-prometheus-stack \
-  --create-namespace \
-  --namespace prometheus \
-  --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
-  --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+if [[ "$installPrometheusAndGrafana" == "true" ]]; then
+  echo "Installing Prometheus and Grafana..."
+  helm install prometheus prometheus-community/kube-prometheus-stack \
+    --create-namespace \
+    --namespace prometheus \
+    --set prometheus.prometheusSpec.podMonitorSelectorNilUsesHelmValues=false \
+    --set prometheus.prometheusSpec.serviceMonitorSelectorNilUsesHelmValues=false
+fi
 
 # Install NGINX ingress controller using the internal load balancer
-helm install nginx-ingress ingress-nginx/ingress-nginx \
-  --create-namespace \
-  --namespace ingress-basic \
-  --set controller.replicaCount=3 \
-  --set controller.nodeSelector."kubernetes\.io/os"=linux \
-  --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
-  --set controller.metrics.enabled=true \
-  --set controller.metrics.serviceMonitor.enabled=true \
-  --set controller.metrics.serviceMonitor.additionalLabels.release="prometheus" \
-  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
-  --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-internal"=true
+if [[ "$nginxIngressControllerType" == "Unmanaged" || "$installNginxIngressController" == "true" ]]; then
+  if [[ "$nginxIngressControllerType" == "Unmanaged" ]]; then
+    echo "Installing unmanaged NGINX ingress controller on the internal load balancer..."
+    helm install nginx-ingress ingress-nginx/ingress-nginx \
+      --create-namespace \
+      --namespace ingress-basic \
+      --set controller.replicaCount=3 \
+      --set controller.nodeSelector."kubernetes\.io/os"=linux \
+      --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
+      --set controller.metrics.enabled=true \
+      --set controller.metrics.serviceMonitor.enabled=true \
+      --set controller.metrics.serviceMonitor.additionalLabels.release="prometheus" \
+      --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz \
+      --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-internal"=true
+    else
+      echo "Installing unmanaged NGINX ingress controller on the public load balancer..."
+      helm install nginx-ingress ingress-nginx/ingress-nginx \
+      --create-namespace \
+      --namespace ingress-basic \
+      --set controller.replicaCount=3 \
+      --set controller.nodeSelector."kubernetes\.io/os"=linux \
+      --set defaultBackend.nodeSelector."kubernetes\.io/os"=linux \
+      --set controller.metrics.enabled=true \
+      --set controller.metrics.serviceMonitor.enabled=true \
+      --set controller.metrics.serviceMonitor.additionalLabels.release="prometheus" \
+      --set controller.service.annotations."service\.beta\.kubernetes\.io/azure-load-balancer-health-probe-request-path"=/healthz
+    fi
+fi
+
+# Create values.yaml file for cert-manager
+echo "Creating values.yaml file for cert-manager..."
+cat <<EOF >values.yaml
+podLabels:
+  azure.workload.identity/use: "true"
+serviceAccount:
+  labels:
+    azure.workload.identity/use: "true"
+EOF
 
 # Install certificate manager
-helm install cert-manager jetstack/cert-manager \
-  --create-namespace \
-  --namespace cert-manager \
-  --set installCRDs=true \
-  --set nodeSelector."kubernetes\.io/os"=linux
+if [[ "$installCertManager" == "true" ]]; then
+  echo "Installing cert-manager..."
+  helm install cert-manager jetstack/cert-manager \
+    --create-namespace \
+    --namespace cert-manager \
+    --set crds.enabled=true \
+    --set nodeSelector."kubernetes\.io/os"=linux \
+    --values values.yaml
 
-# Create cluster issuer
-cat <<EOF | kubectl apply -f -
+  # Create this cluster issuer only when the unmanaged NGINX ingress controller is installed and configured to use the AKS public load balancer
+  if [[ -n "$email" && ("$nginxIngressControllerType" == "Managed" || "$installNginxIngressController" == "true") ]]; then
+    echo "Creating the letsencrypt-nginx cluster issuer for the unmanaged NGINX ingress controller..."
+    cat <<EOF | kubectl apply -f -
 apiVersion: cert-manager.io/v1
 kind: ClusterIssuer
 metadata:
@@ -77,8 +112,79 @@ spec:
               nodeSelector:
                 "kubernetes.io/os": linux
 EOF
+  fi
+
+  # Create this cluster issuer only when the managed NGINX ingress controller is installed and configured to use the AKS public load balancer
+  if [[ -n "$email" && "$webAppRoutingEnabled" == "true" ]]; then
+    echo "Creating the letsencrypt-webapprouting cluster issuer for the managed NGINX ingress controller..."
+    cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-webapprouting
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: $email
+    privateKeySecretRef:
+      name: letsencrypt
+    solvers:
+    - http01:
+        ingress:
+          class: webapprouting.kubernetes.azure.com
+          podTemplate:
+            spec:
+              nodeSelector:
+                "kubernetes.io/os": linux
+EOF
+  fi
+
+  # Create cluster issuer
+  if [[ -n "$email" && -n "$dnsZoneResourceGroupName" && -n "$subscriptionId" && -n "$dnsZoneName" && -n "$certManagerClientId" ]]; then
+    echo "Creating the letsencrypt-dns cluster issuer..."
+    cat <<EOF | kubectl apply -f -
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-dns
+  namespace: kube-system
+spec:
+  acme:
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: $email
+    privateKeySecretRef:
+      name: letsencrypt-dns
+    solvers:
+    - dns01:
+        azureDNS:
+          resourceGroupName: $dnsZoneResourceGroupName
+          subscriptionID: $subscriptionId
+          hostedZoneName: $dnsZoneName
+          environment: AzurePublicCloud
+          managedIdentity:
+            clientID: $certManagerClientId
+EOF
+  fi
+fi
+
+# Configure the managed NGINX ingress controller to use an internal Azure load balancer
+if [[ "$nginxIngressControllerType" == "Managed" ]]; then
+  echo "Creating a managed NGINX ingress controller configured to use an internal Azure load balancer..."
+  cat <<EOF | kubectl apply -f -
+apiVersion: approuting.kubernetes.azure.com/v1alpha1
+kind: NginxIngressController
+metadata:
+  name: nginx-internal
+spec:
+  controllerNamePrefix: nginx-internal
+  ingressClassName: nginx-internal
+  loadBalancerAnnotations: 
+    service.beta.kubernetes.io/azure-load-balancer-internal: "true"
+EOF
+fi
 
 # Create a namespace for the application
+echo "Creating the [$namespace] namespace..."
 kubectl create namespace $namespace
 
 # Create the Secret Provider Class object
@@ -101,7 +207,7 @@ spec:
   parameters:
     usePodIdentity: "false"
     useVMManagedIdentity: "true"
-    userAssignedIdentityID: $clientId
+    userAssignedIdentityID: $csiDriverClientId
     keyvaultName: $keyVaultName
     objects: |
       array:
@@ -187,8 +293,15 @@ spec:
     app: httpbin
 EOF
 
+# Determine the ingressClassName
+if [[ "$nginxIngressControllerType" == "Managed" ]]; then
+  ingressClassName="nginx-internal"
+else
+  ingressClassName="nginx"
+fi
+
 # Create an ingress resource for the application
-echo "Creating an ingress in the [$namespace] namespace..."
+echo "Creating an ingress in the [$namespace] namespace configured to use the [$ingressClassName] ingress class..."
 cat <<EOF | kubectl apply -n $namespace -f -
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -199,8 +312,9 @@ metadata:
     nginx.ingress.kubernetes.io/proxy-send-timeout: "360"
     nginx.ingress.kubernetes.io/proxy-read-timeout: "360"
     nginx.ingress.kubernetes.io/proxy-next-upstream-timeout: "360"
+    external-dns.alpha.kubernetes.io/ingress-hostname-source: "annotation-only" # This entry tell ExternalDNS to only use the hostname defined in the annotation, hence not to create any DNS records for this ingress
 spec:
-  ingressClassName: nginx
+  ingressClassName: $ingressClassName
   tls:
   - hosts:
     - $hostname

@@ -40,7 +40,10 @@ var alertServerityLookup = {
 }
 var alertSeverityNumber = alertServerityLookup[alertSeverity]
 
-var AksResourceId = resourceId('Microsoft.ContainerService/managedClusters', aksClusterName)
+// Resources
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-preview' existing = {
+  name: aksClusterName
+}
 
 resource nodeCpuUtilizationHighForAksCluster 'Microsoft.Insights/metricAlerts@2018-03-01' = {
   name: '${aksClusterName} | Node CPU utilization high'
@@ -75,7 +78,7 @@ resource nodeCpuUtilizationHighForAksCluster 'Microsoft.Insights/metricAlerts@20
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -116,7 +119,7 @@ resource nodeWorkingSetMemoryUtilizationHighForAksCluster 'Microsoft.Insights/me
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -164,7 +167,7 @@ resource jobsCompletedMoreThanSixHoursAgoForAksCluster 'Microsoft.Insights/metri
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -212,7 +215,7 @@ resource containerCpuUsageHighForAksCluster 'Microsoft.Insights/metricAlerts@201
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -260,7 +263,7 @@ resource containerWorkingSetMemoryUsageHighForAksCluster 'Microsoft.Insights/met
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -301,7 +304,7 @@ resource podsInFailedStateForAksCluster 'Microsoft.Insights/metricAlerts@2018-03
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -349,7 +352,7 @@ resource diskUsageHighForAksCluster 'Microsoft.Insights/metricAlerts@2018-03-01'
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -390,7 +393,7 @@ resource nodesInNotReadyStateForAksCluster 'Microsoft.Insights/metricAlerts@2018
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -438,7 +441,7 @@ resource containersGettingOomKilledForAksCluster 'Microsoft.Insights/metricAlert
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -486,7 +489,7 @@ resource persistentVolumeUsageHighForAksCluster 'Microsoft.Insights/metricAlerts
     enabled: false
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -534,7 +537,7 @@ resource podsNotInReadyStateForAksCluster 'Microsoft.Insights/metricAlerts@2018-
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'microsoft.containerservice/managedclusters'
@@ -582,7 +585,7 @@ resource restartingContainerCountForAksCluster 'Microsoft.Insights/metricAlerts@
     enabled: metricAlertsEnabled
     evaluationFrequency: evalFrequency
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     severity: alertSeverityNumber
     targetResourceType: 'Microsoft.ContainerService/managedClusters'
@@ -599,7 +602,7 @@ resource containerCpuUsageViolatesTheConfiguredThresholdForAksCluster 'microsoft
     severity: alertSeverityNumber
     enabled: true
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     evaluationFrequency: evalFrequency
     windowSize: windowSize
@@ -646,7 +649,7 @@ resource containerWorkingSetMemoryUsageViolatesTheConfiguredThresholdForAksClust
     severity: alertSeverityNumber
     enabled: metricAlertsEnabled
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     evaluationFrequency: evalFrequency
     windowSize: windowSize
@@ -694,7 +697,7 @@ resource pvUsageViolatesTheConfiguredThresholdForAksCluster 'Microsoft.Insights/
     severity: alertSeverityNumber
     enabled: metricAlertsEnabled
     scopes: [
-      AksResourceId
+      aksCluster.id
     ]
     evaluationFrequency: evalFrequency
     windowSize: windowSize

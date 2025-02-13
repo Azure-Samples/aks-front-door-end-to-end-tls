@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Variables
-url="https://store.test.com.com"
+url="https://httpbin.babosbird.com"
 
 # Call REST API
 echo "Calling REST API..."

@@ -5,7 +5,7 @@ template="main.bicep"
 parameters="main.bicepparam"
 
 # AKS cluster name
-prefix="<your-resource-prefix>"
+prefix="Babo"
 aksName="${prefix}Aks"
 validateTemplate=0
 useWhatIf=0
@@ -15,7 +15,7 @@ installExtensions=0
 
 # Name and location of the resource group for the Azure Kubernetes Service (AKS) cluster
 resourceGroupName="${prefix}RG"
-location="NorthEurope"
+location="EastUS2"
 deploymentName="main"
 
 # Subscription id, subscription name, and tenant id of the current subscription

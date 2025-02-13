@@ -5,6 +5,31 @@ param name string = 'BashScript'
 @description('Specifies the primary script URI.')
 param primaryScriptUri string
 
+@description('Specifies the name of the deployment script user-defined managed identity.')
+param managedIdentityName string
+
+@description('''Specifies the the kind of NGINX ingress controller to use. You can assign two values: 
+- Managed: is the managed NGINX ingress controller installed by the Azure Kubernetes Service (AKS) team.
+- Unmanaged: is the NGINX ingress controller installed via Helm.
+''')
+@allowed([
+  'Managed'
+  'Unmanaged'
+])
+param nginxIngressControllerType string
+
+@description('Specifies whether the managed NGINX Ingress Controller application routing addon is enabled.')
+param webAppRoutingEnabled bool
+
+@description('Specifies whether deploying Prometheus and Grafana using Helm.')
+param installPrometheusAndGrafana bool = false
+
+@description('Specifies whether deploying cert-manager using Helm.')
+param installCertManager bool = false
+
+@description('Specifies whether deploying NGINX ingress controller using Helm.')
+param installNginxIngressController bool = false
+
 @description('Specifies the name of the AKS cluster.')
 param clusterName string
 
@@ -33,8 +58,17 @@ param keyVaultName string
 @description('Specifies the name of the existing TLS certificate.')
 param keyVaultCertificateName string
 
+@description('Specifies the name of the public DNS zone used by the managed NGINX Ingress Controller, when enabled.')
+param dnsZoneName string
+
+@description('Specifies the resource group name of the public DNS zone used by the managed NGINX Ingress Controller, when enabled.')
+param dnsZoneResourceGroupName string
+
+@description('Specifies the client id of the cert-manager user-assigned managed identity.')
+param certManagerClientId string
+
 @description('Specifies the client id of the Key Vault CSI Driver user-assigned managed identity.')
-param clientId string
+param csiDriverClientId string
 
 @description('Specifies the tenantId.')
 param tenantId string
@@ -51,25 +85,27 @@ param location string = resourceGroup().location
 @description('Specifies the resource tags.')
 param tags object
 
-// Variables
-var clusterAdminRoleDefinitionId = resourceId('Microsoft.Authorization/roleDefinitions', '0ab0b1a8-8aac-4efd-b8c2-3ee1fb270be8')
-
 // Resources
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2022-11-02-preview' existing = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-preview' existing = {
   name: clusterName
 }
 
-resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2021-09-30-preview' = {
-  name: 'scriptManagedIdentity'
+resource clusterAdminRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
+  name: '0ab0b1a8-8aac-4efd-b8c2-3ee1fb270be8'
+  scope: subscription()
+}
+
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' = {
+  name: managedIdentityName
   location: location
   tags: tags
 }
 
-resource clusterAdminContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2020-10-01-preview' = {
-  name:  guid(managedIdentity.id, aksCluster.id, clusterAdminRoleDefinitionId)
+resource clusterAdminContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name:  guid(managedIdentity.id, aksCluster.id, clusterAdminRoleDefinition.id)
   scope: aksCluster
   properties: {
-    roleDefinitionId: clusterAdminRoleDefinitionId
+    roleDefinitionId: clusterAdminRoleDefinition.id
     principalId: managedIdentity.properties.principalId
     principalType: 'ServicePrincipal'
   }
@@ -104,6 +140,10 @@ resource deploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
         value: subscriptionId
       }
       {
+        name: 'nginxIngressControllerType'
+        value: nginxIngressControllerType
+      }
+      {
         name: 'hostname'
         value: hostName
       }
@@ -128,8 +168,20 @@ resource deploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
         value: keyVaultCertificateName
       }
       {
-        name: 'clientId'
-        value: clientId
+        name: 'dnsZoneName'
+        value: dnsZoneName
+      }
+      {
+        name: 'dnsZoneResourceGroupName'
+        value: dnsZoneResourceGroupName
+      }
+      {
+        name: 'certManagerClientId'
+        value: certManagerClientId
+      }
+      {
+        name: 'csiDriverClientId'
+        value: csiDriverClientId
       }
       {
         name: 'tenantId'
@@ -138,6 +190,22 @@ resource deploymentScript 'Microsoft.Resources/deploymentScripts@2020-10-01' = {
       {
         name: 'email'
         value: email
+      }
+      {
+        name: 'webAppRoutingEnabled'
+        value: webAppRoutingEnabled ? 'true' : 'false'
+      }
+      {
+        name: 'installPrometheusAndGrafana'
+        value: installPrometheusAndGrafana ? 'true' : 'false'
+      }
+      {
+        name: 'installCertManager'
+        value: installCertManager ? 'true' : 'false'
+      }
+      {
+        name: 'installNginxIngressController'
+        value: installNginxIngressController ? 'true' : 'false'
       }
     ]
     primaryScriptUri: primaryScriptUri

@@ -53,6 +53,8 @@ param aksClusterNetworkPluginMode string = ''
 @allowed([
   'azure'
   'calico'
+  'cilium'
+  'none'
 ])
 param aksClusterNetworkPolicy string = 'azure'
 
@@ -93,8 +95,8 @@ param aksClusterLoadBalancerSku string = 'standard'
 ])
 param loadBalancerBackendPoolType string = 'nodeIPConfiguration'
 
-@description('Specifies whether Network Observability is enabled or not. When enabled, network monitoring generates metrics in Prometheus format.')
-param aksClusterMonitoringEnabled bool = false
+@description('Specifies whether Advanced Container Networking Services is enabled or not. When enabled, network monitoring generates metrics in Prometheus format.')
+param aksClusterAcnsEnabled bool = false
 
 @description('Specifies the IP families are used to determine single-stack or dual-stack clusters. For single-stack, the expected value is IPv4. For dual-stack, the expected values are IPv4 and IPv6.')
 param aksClusterIpFamilies array = ['IPv4']
@@ -633,6 +635,9 @@ param keyVaultResourceGroupName string
 @description('Specifies the name of the existing TLS certificate.')
 param keyVaultCertificateName string
 
+@description('Specifies the version of the Key Vault secret that contains the custom domain certificate. Set the value to an empty string to use the latest version.')
+param keyVaultCertificateVersion string = ''
+
 @description('Specifies the name of the Azure Front Door.')
 param frontDoorName string = letterCaseType == 'UpperCamelCase'
   ? '${toUpper(first(prefix))}${toLower(substring(prefix, 1, length(prefix) - 1))}FrontDoor'
@@ -1019,6 +1024,25 @@ param dnsZoneName string
 @description('Specifies the name of the resource group which contains the public DNS zone.')
 param dnsZoneResourceGroupName string
 
+@description('''Specifies the the kind of NGINX ingress controller to use. You can assign two values: 
+- Managed: is the managed NGINX ingress controller installed by the Azure Kubernetes Service (AKS) team.
+- Unmanaged: is the NGINX ingress controller installed via Helm.
+''')
+@allowed([
+  'Managed'
+  'Unmanaged'
+])
+param nginxIngressControllerType string = aksClusterWebAppRoutingEnabled ? 'Managed' : 'Unmanaged'
+
+@description('Specifies whether deploying Prometheus and Grafana using Helm.')
+param installPrometheusAndGrafana bool = false
+
+@description('Specifies whether deploying cert-manager using Helm.')
+param installCertManager bool = false
+
+@description('Specifies whether deploying NGINX ingress controller using Helm.')
+param installNginxIngressController bool = false
+
 @description('Specifies the time-to-live (TTL) value for the CNAME record.')
 param cnameRecordTtl int = 3600
 
@@ -1032,7 +1056,8 @@ module keyVault 'keyVault.bicep' = {
   scope: resourceGroup(keyVaultResourceGroupName)
   params: {
     name: keyVaultName
-    objectId: aksCluster.outputs.azureKeyvaultSecretsProviderIdentity.objectId
+    keyVaultCsiDriverManagedIdentityObjectId: aksCluster.outputs.azureKeyvaultSecretsProviderIdentity.objectId
+    frontDoorManagedIdentityObjectId: frontDoorManagedIdentity.outputs.principalId
     azureKeyvaultSecretsProviderEnabled: azureKeyvaultSecretsProviderEnabled
   }
 }
@@ -1144,11 +1169,41 @@ module jumpboxVirtualMachine 'virtualMachine.bicep' = if (vmEnabled) {
   }
 }
 
-module aksManageIdentity 'aksManagedIdentity.bicep' = {
-  name: 'aksManageIdentity'
+module aksManagedIdentity 'aksManagedIdentity.bicep' = {
+  name: 'aksManagedIdentity'
   params: {
-    managedIdentityName: '${aksClusterName}Identity'
+    name: letterCaseType == 'UpperCamelCase'
+    ? '${aksClusterName}Identity'
+    : letterCaseType == 'CamelCase'
+        ? '${aksClusterName}Identity'
+        : '${aksClusterName}-identity'
     virtualNetworkName: network.outputs.virtualNetworkName
+    location: location
+    tags: tags
+  }
+}
+
+module certManagerManagedIdentity 'managedIdentity.bicep' = {
+  name: 'certManagerManagedIdentity'
+  params: {
+    name: letterCaseType == 'UpperCamelCase'
+    ? 'CertManagerIdentity'
+    : letterCaseType == 'CamelCase'
+        ? 'certManagerIdentity'
+        : 'cert-manager-identity'
+    location: location
+    tags: tags
+  }
+}
+
+module frontDoorManagedIdentity 'managedIdentity.bicep' = {
+  name: 'frontDoorManagedIdentity'
+  params: {
+    name: letterCaseType == 'UpperCamelCase'
+    ? '${frontDoorName}Identity'
+    : letterCaseType == 'CamelCase'
+        ? '${frontDoorName}Identity'
+        : '${frontDoorName}-identity'
     location: location
     tags: tags
   }
@@ -1160,9 +1215,6 @@ module kubeletManageIdentity 'kubeletManagedIdentity.bicep' = {
     aksClusterName: aksCluster.outputs.name
     acrName: containerRegistry.outputs.name
   }
-  dependsOn: [
-    aksCluster
-  ]
 }
 
 module aksCluster 'aksCluster.bicep' = {
@@ -1175,20 +1227,20 @@ module aksCluster 'aksCluster.bicep' = {
     userAgentPoolSubnetName: userAgentPoolSubnetName
     podSubnetName: podSubnetName
     apiServerSubnetName: apiServerSubnetName
-    managedIdentityName: aksManageIdentity.outputs.name
+    managedIdentityName: aksManagedIdentity.outputs.name
     dnsPrefix: aksClusterDnsPrefix
     networkDataplane: aksClusterNetworkDataplane
     networkMode: aksClusterNetworkMode
     networkPlugin: aksClusterNetworkPlugin
     networkPluginMode: aksClusterNetworkPluginMode
     networkPolicy: aksClusterNetworkPolicy
-    webAppRoutingEnabled: aksClusterWebAppRoutingEnabled
+    webAppRoutingEnabled: nginxIngressControllerType == 'Managed' || aksClusterWebAppRoutingEnabled
     podCidr: aksClusterPodCidr
     serviceCidr: aksClusterServiceCidr
     dnsServiceIP: aksClusterDnsServiceIP
     loadBalancerSku: aksClusterLoadBalancerSku
     loadBalancerBackendPoolType: loadBalancerBackendPoolType
-    monitoringEnabled: aksClusterMonitoringEnabled
+    acnsEnabled: aksClusterAcnsEnabled
     ipFamilies: aksClusterIpFamilies
     outboundType: aksClusterOutboundType
     skuTier: aksClusterSkuTier
@@ -1281,11 +1333,6 @@ module aksCluster 'aksCluster.bicep' = {
     location: location
     tags: clusterTags
   }
-  dependsOn: [
-    network
-    aksManageIdentity
-    workspace
-  ]
 }
 
 module actionGroup 'actionGroup.bicep' = if (actionGroupEnabled) {
@@ -1332,7 +1379,7 @@ module grafana 'managedGrafana.bicep' = {
 }
 
 module privateLinkService 'privateLinkService.bicep' = {
-  name: 'modules-private-link-service'
+  name: 'privateLinkService'
   params: {
     name: privateLinkServiceName
     loadBalancerName: loadBalancerName
@@ -1351,6 +1398,7 @@ module frontDoor 'frontDoor.bicep' = {
   params: {
     frontDoorName: frontDoorName
     frontDoorSkuName: frontDoorSkuName
+    managedIdentityName: frontDoorManagedIdentity.outputs.name
     originResponseTimeoutSeconds: originResponseTimeoutSeconds
     originGroupName: originGroupName
     originName: originName
@@ -1390,14 +1438,16 @@ module frontDoor 'frontDoor.bicep' = {
     securityPolicyName: securityPolicyName
     securityPolicyPatternsToMatch: securityPolicyPatternsToMatch
     keyVaultName: keyVaultName
+    keyVaultResourceGroupName: keyVaultResourceGroupName
     keyVaultCertificateName: keyVaultCertificateName
+    keyVaultCertificateVersion: keyVaultCertificateVersion
     customDomainName: hostName
     workspaceId: workspace.outputs.id
     location: location
     tags: tags
   }
   dependsOn: [
-    privateLinkService
+    keyVault
   ]
 }
 
@@ -1412,23 +1462,33 @@ module aksmetricalerts 'metricAlerts.bicep' = if (createMetricAlerts) {
     alertSeverity: 'Informational'
     tags: tags
   }
-  dependsOn: [
-    aksCluster
-  ]
 }
 
 module deploymentScript 'deploymentScript.bicep' = {
   name: 'deploymentScript'
   params: {
     name: deploymentScripName
+    managedIdentityName: letterCaseType == 'UpperCamelCase'
+    ? 'DeploymentScriptIdentity'
+    : letterCaseType == 'CamelCase'
+        ? 'deploymentScriptIdentity'
+        : 'deployment-script-identity'
     clusterName: aksCluster.outputs.name
     hostName: hostName
+    nginxIngressControllerType: nginxIngressControllerType
+    webAppRoutingEnabled: aksClusterWebAppRoutingEnabled
+    installPrometheusAndGrafana: installPrometheusAndGrafana
+    installCertManager: installCertManager
+    installNginxIngressController: installNginxIngressController
     secretProviderClassName: secretProviderClassName
     secretName: secretName
     namespace: namespace
     keyVaultCertificateName: keyVaultCertificateName
     keyVaultName: keyVaultName
-    clientId: aksCluster.outputs.azureKeyvaultSecretsProviderIdentity.clientId
+    dnsZoneName: dnsZoneName
+    dnsZoneResourceGroupName: dnsZoneResourceGroupName
+    certManagerClientId: certManagerManagedIdentity.outputs.clientId
+    csiDriverClientId: aksCluster.outputs.azureKeyvaultSecretsProviderIdentity.clientId
     tenantId: tenantId
     email: email
     primaryScriptUri: deploymentScriptUri
@@ -1438,7 +1498,6 @@ module deploymentScript 'deploymentScript.bicep' = {
     tags: tags
   }
   dependsOn: [
-    aksCluster
     keyVault
   ]
 }
@@ -1453,10 +1512,9 @@ module dnsZone 'dnsZone.bicep' = {
     hostName: frontDoor.outputs.frontDoorEndpointFqdn
     validationToken: frontDoor.outputs.customDomainValidationDnsTxtRecordValue
     domainValidationState: frontDoor.outputs.customDomainValidationState
+    certManagerManagedIdentityObjectId: certManagerManagedIdentity.outputs.principalId
+    webAppRoutingManagedIdentityObjectId: aksCluster.outputs.webAppRoutingManagedIdentity.objectId
   }
-  dependsOn: [
-    frontDoor
-  ]
 }
 
 // Outputs

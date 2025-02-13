@@ -9,6 +9,9 @@ param frontDoorName string
 ])
 param frontDoorSkuName string = 'Premium_AzureFrontDoor'
 
+@description('Specifies the name of the Front Door user-defined managed identity.')
+param managedIdentityName string
+
 @description('Specifies the send and receive timeout on forwarding request to the origin. When timeout is reached, the request fails and returns.')
 param originResponseTimeoutSeconds int = 30
 
@@ -243,12 +246,22 @@ resource keyVault 'Microsoft.KeyVault/vaults@2022-07-01' existing = {
   }
 }
 
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' existing = {
+  name: managedIdentityName
+}
+
 resource frontDoor 'Microsoft.Cdn/profiles@2022-11-01-preview' = {
   name: frontDoorName
   location: 'Global'
   tags: tags
   sku: {
     name: frontDoorSkuName
+  }
+  identity: {
+    type: 'UserAssigned'
+    userAssignedIdentities: {
+      '${managedIdentity.id}': {}
+    }
   }
   properties: {
     originResponseTimeoutSeconds: originResponseTimeoutSeconds

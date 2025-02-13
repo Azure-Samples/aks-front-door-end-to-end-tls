@@ -51,6 +51,8 @@ param networkMode string = 'transparent'
 @allowed([
   'azure'
   'calico'
+  'cilium'
+  'none'
 ])
 param networkPolicy string = 'azure'
 
@@ -455,6 +457,9 @@ param snapshotControllerEnabled bool = true
 @description('Specifies whether to enable Defender threat detection. The default value is false.')
 param defenderSecurityMonitoringEnabled bool = false
 
+@description('Specifies whether Advanced Container Networking Services is enabled or not. When enabled, network monitoring generates metrics in Prometheus format.')
+param acnsEnabled bool = false
+
 @description('Specifies whether to enable ImageCleaner on AKS cluster. The default value is false.')
 param imageCleanerEnabled bool = false
 
@@ -524,7 +529,7 @@ var metrics = [for category in metricCategories: {
 }]
 
 // Resources
-resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2021-09-30-preview' existing = {
+resource managedIdentity 'Microsoft.ManagedIdentity/userAssignedIdentities@2023-07-31-preview' existing = {
   name: managedIdentityName
 }
 
@@ -557,7 +562,7 @@ resource dnsZone 'Microsoft.Network/dnsZones@2018-05-01' existing = if (webAppRo
   scope: resourceGroup(dnsZoneResourceGroupName)
 }
 
-resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-03-02-preview' = {
+resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-09-02-preview' = {
   name: name
   location: location
   tags: tags
@@ -677,12 +682,21 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-03-02-previ
     ingressProfile: {
         webAppRouting: {
             enabled: webAppRoutingEnabled
-            dnsZoneResourceIds: [
+            dnsZoneResourceIds: !empty(dnsZone.id) ? [
                 dnsZone.id
-            ]
+            ] : []
         }
     }
     networkProfile: {
+      advancedNetworking: {
+        enabled: acnsEnabled
+        observability: {
+          enabled: acnsEnabled
+        }
+        security: {
+          enabled: acnsEnabled
+        }
+      }
       networkDataplane: networkDataplane
       networkMode: networkPlugin == 'azure' ? networkMode : ''
       networkPlugin: networkPlugin
@@ -693,9 +707,6 @@ resource aksCluster 'Microsoft.ContainerService/managedClusters@2024-03-02-previ
       dnsServiceIP: dnsServiceIP
       outboundType: outboundType
       loadBalancerSku: loadBalancerSku
-      monitoring: monitoringEnabled ? {
-        enabled: true
-      } : null
       loadBalancerProfile: {
         backendPoolType: loadBalancerBackendPoolType
       }
@@ -852,3 +863,4 @@ output name string = aksCluster.name
 output fqdn string = aksCluster.properties.fqdn
 output nodeResourceGroup string = aksCluster.properties.nodeResourceGroup
 output azureKeyvaultSecretsProviderIdentity object = aksCluster.properties.addonProfiles.azureKeyvaultSecretsProvider.identity
+output webAppRoutingManagedIdentity object = aksCluster.properties.ingressProfile.webAppRouting.identity

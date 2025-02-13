@@ -17,8 +17,20 @@ param domainValidationState string
 @description('Specifies the validation token of the custom domain.')
 param validationToken string
 
+@description('Specifies the object id of the cert-manager user-assigned managed identity.')
+param certManagerManagedIdentityObjectId string
+
+@description('Specifies the object id of application routing add-on user-assigned managed identity.')
+param webAppRoutingManagedIdentityObjectId string
+
+// Resources
 resource dnsZone 'Microsoft.Network/dnsZones@2018-05-01' existing = {
   name: name
+}
+
+resource dnsZoneContributorRoleDefinition 'Microsoft.Authorization/roleDefinitions@2022-04-01' existing = {
+  name: 'befefa01-2a29-4197-83a8-272ff33ce314'
+  scope: subscription()
 }
 
 resource cnameRecord 'Microsoft.Network/dnsZones/CNAME@2018-05-01' = {
@@ -44,6 +56,26 @@ resource validationTxtRecord 'Microsoft.Network/dnsZones/TXT@2018-05-01' = if (d
         ]
       }
     ]
+  }
+}
+
+resource certManagerManagedIdentityDnsZoneContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name:  guid(certManagerManagedIdentityObjectId, dnsZone.id, dnsZoneContributorRoleDefinition.id)
+  scope: dnsZone
+  properties: {
+    roleDefinitionId: dnsZoneContributorRoleDefinition.id
+    principalId: certManagerManagedIdentityObjectId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+resource webAppRoutingManagedIdentityDnsZoneContributorRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name:  guid(webAppRoutingManagedIdentityObjectId, dnsZone.id, dnsZoneContributorRoleDefinition.id)
+  scope: dnsZone
+  properties: {
+    roleDefinitionId: dnsZoneContributorRoleDefinition.id
+    principalId: webAppRoutingManagedIdentityObjectId
+    principalType: 'ServicePrincipal'
   }
 }
 
