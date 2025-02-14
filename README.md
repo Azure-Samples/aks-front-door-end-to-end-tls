@@ -190,9 +190,9 @@ The deployment time steps are as follows:
    - A Kubernetes [deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and [service](https://kubernetes.io/docs/concepts/services-networking/service/) for the sample [httpbin](https://httpbin.org/) web application.
    - A Kubernetes [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object to expose the web application via the NGINX ingress controller.
    - A [SecretProviderClass](https://learn.microsoft.com/en-us/azure/aks/aksarc/secrets-store-csi-driver) custom resource that retrieves the TLS certificate from the specified Azure Key Vault by using the user-defined managed identity of the [Azure Key Vault provider for Secrets Store CSI Driver](/azure/aks/csi-secrets-store-driver). This component creates a Kubernetes secret containing the TLS certificate referenced by the ingress object.
-     - (Optional) [NGINX ingress controller](https://docs.nginx.com/nginx-ingress-controller/intro/overview/) via Helm if you opted to use an unmanaged NGINX ingress controller.
-     - (Optional) [Cert-manager](https://cert-manager.io/docs/)
-     - (Optional) [Prometheus and Grafana](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack)
+   - (Optional) [NGINX ingress controller](https://docs.nginx.com/nginx-ingress-controller/intro/overview/) via Helm if you opted to use an unmanaged NGINX ingress controller.
+   - (Optional) [Cert-manager](https://cert-manager.io/docs/)
+   - (Optional) [Prometheus and Grafana](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack)
 4. A Front Door [secret](https://learn.microsoft.com/en-us/azure/templates/microsoft.cdn/profiles/secrets?pivots=deployment-language-bicep) resource is used to manage and store the TLS certificate from the Azure Key Vault. This certificate is used by the [custom domain](https://learn.microsoft.com/en-us/azure/templates/microsoft.cdn/profiles/customdomains?pivots=deployment-language-bicep) associated with the Azure Front Door endpoint.
 
 ### Runtime
