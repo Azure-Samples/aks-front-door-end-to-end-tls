@@ -154,9 +154,9 @@ The Bicep modules deploy or use the following Azure resources:
   - Azure Container Registry
   - Azure Storage Account
 - [Microsoft.Resources/deploymentScripts](https://learn.microsoft.com/en-us/azure/templates/microsoft.resources/deploymentscripts?pivots=deployment-language-bicep): a deployment script is used to run the `install-front-door-end-to-end-tls.sh` Bash script which installs the [httpbin](https://httpbin.org/) web application via YAML templates and the following packages to the AKS cluster via [Helm](https://helm.sh/). For more information on deployment scripts, see [Use deployment scripts in Bicep](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/deployment-script-bicep)
-  - [NGINX Ingress Controller](https://docs.nginx.com/nginx-ingress-controller/)
-  - [Cert-Manager](https://cert-manager.io/docs/)
-  - [Prometheus](https://prometheus.io/)
+  - (Optional) [NGINX ingress controller](https://docs.nginx.com/nginx-ingress-controller/intro/overview/) via Helm if you opted to use an unmanaged NGINX ingress controller.
+  - (Optional) [Cert-manager](https://cert-manager.io/docs/)
+  - (Optional) [Prometheus and Grafana](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack)
 
 > **NOTE**  
 > At the end of the deployment, the `deploy.sh` performs additional steps to approve the Azure Private Link Service connection from Azure Front Door. For more information, see [Secure your Origin with Private Link in Azure Front Door Premium](https://learn.microsoft.com/en-us/azure/frontdoor/private-link). If you don't use the `deploy.sh` script to deploy the Bicep modules, you must approve the private endpoint connection before traffic can pass to the origin privately. You can approve private endpoint connections by using the Azure portal, Azure CLI, or Azure PowerShell. For more information, see [Manage a Private Endpoint connection](https://learn.microsoft.com/en-us/azure/private-link/manage-private-endpoint).
