@@ -186,7 +186,13 @@ The deployment time steps are as follows:
    - The name and resource group of the existing Azure Key Vault that holds the TLS certificate for the workload hostname and Front Door custom domain.
    - The name of the certificate in the Key Vault.
    - The name and resource group of the DNS zone used for resolving the Front Door custom domain.
-3. The [Deployment Script](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/deployment-script-bicep) deploys a sample [httpbin](https://httpbin.org/) web application using Helm and YAML manifests and optionally creates the [NGINX Ingress Controller](https://docs.nginx.com/nginx-ingress-controller/intro/overview/). The script defines a `SecretProviderClass` that retrieves the TLS certificate from the specified Azure Key Vault using the user-defined managed identity of the [Azure Key Vault provider for Secrets Store CSI Driver](https://learn.microsoft.com/en-us/azure/aks/csi-secrets-store-driver), and creates a Kubernetes `secret`. The `deployment` and `ingress` objects are configured to use the certificate stored in the Kubernetes secret.
+3. The [Deployment Script](https://learn.microsoft.com/en-us/azure/azure-resource-manager/bicep/deployment-script-bicep) creates the following objects in the AKS cluster:
+   - A Kubernetes [deployment](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/) and [service](https://kubernetes.io/docs/concepts/services-networking/service/) for the sample [httpbin](https://httpbin.org/) web application.
+   - A Kubernetes [ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) object to expose the web application via the NGINX ingress controller.
+   - A [SecretProviderClass](https://learn.microsoft.com/en-us/azure/aks/aksarc/secrets-store-csi-driver) custom resource that retrieves the TLS certificate from the specified Azure Key Vault by using the user-defined managed identity of the [Azure Key Vault provider for Secrets Store CSI Driver](/azure/aks/csi-secrets-store-driver). This component creates a Kubernetes secret containing the TLS certificate referenced by the ingress object.
+     - (Optional) [NGINX ingress controller](https://docs.nginx.com/nginx-ingress-controller/intro/overview/) via Helm if you opted to use an unmanaged NGINX ingress controller.
+     - (Optional) [Cert-manager](https://cert-manager.io/docs/)
+     - (Optional) [Prometheus and Grafana](https://artifacthub.io/packages/helm/prometheus-community/kube-prometheus-stack)
 4. A Front Door [secret](https://learn.microsoft.com/en-us/azure/templates/microsoft.cdn/profiles/secrets?pivots=deployment-language-bicep) resource is used to manage and store the TLS certificate from the Azure Key Vault. This certificate is used by the [custom domain](https://learn.microsoft.com/en-us/azure/templates/microsoft.cdn/profiles/customdomains?pivots=deployment-language-bicep) associated with the Azure Front Door endpoint.
 
 ### Runtime
